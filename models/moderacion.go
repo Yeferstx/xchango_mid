@@ -20,15 +20,17 @@ type PublicacionEliminada struct {
 }
 
 type Documento struct {
-	Id            string  `json:"id,omitempty"`
-	UsuarioId     string  `json:"usuarioId"`
-	TipoDocumento string  `json:"tipoDocumento"`
-	Numero        string  `json:"numero"`
-	Archivo       string  `json:"archivo"`
-	FechaSubida   string  `json:"fechaSubida"`
-	Estado        string  `json:"estado"`
-	Observacion   string  `json:"observacion"`
-	RevisadoPor   *string `json:"revisadoPor"`
+	Id            string `json:"id,omitempty"`
+	UsuarioId     string `json:"usuarioId"`
+	TipoDocumento string `json:"tipoDocumento"`
+	Numero        string `json:"numero"`
+	Archivo       string `json:"archivo"`
+	// foto de atras del documento ("" en los documentos que se subieron antes)
+	ArchivoReverso string  `json:"archivoReverso"`
+	FechaSubida    string  `json:"fechaSubida"`
+	Estado         string  `json:"estado"`
+	Observacion    string  `json:"observacion"`
+	RevisadoPor    *string `json:"revisadoPor"`
 }
 
 type SolicitudEliminar struct {

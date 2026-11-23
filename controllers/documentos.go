@@ -36,6 +36,7 @@ func (c *DocumentosController) Subir() {
 	tipo := strings.TrimSpace(solicitud.TipoDocumento)
 	numero := strings.TrimSpace(solicitud.Numero)
 	archivo := strings.TrimSpace(solicitud.Archivo)
+	archivoReverso := strings.TrimSpace(solicitud.ArchivoReverso)
 
 	tipoValido := false
 	for _, t := range tiposDocumento {
@@ -59,13 +60,18 @@ func (c *DocumentosController) Subir() {
 		return
 	}
 
-	if archivo == "" {
-		responderError(&c.Controller, 400, "Debes adjuntar la foto del documento.")
+	if archivo == "" || archivoReverso == "" {
+		responderError(&c.Controller, 400, "Debes adjuntar la foto del documento por los dos lados.")
 		return
 	}
 
-	if len(archivo) > maximoArchivo {
-		responderError(&c.Controller, 400, "La foto del documento es muy pesada.")
+	if !strings.HasPrefix(archivo, "data:image/") || !strings.HasPrefix(archivoReverso, "data:image/") {
+		responderError(&c.Controller, 400, "Las fotos del documento no son válidas.")
+		return
+	}
+
+	if len(archivo) > maximoArchivo || len(archivoReverso) > maximoArchivo {
+		responderError(&c.Controller, 400, "Una de las fotos del documento es muy pesada.")
 		return
 	}
 
@@ -99,13 +105,14 @@ func (c *DocumentosController) Subir() {
 	}
 
 	nuevo := models.Documento{
-		UsuarioId:     sesion.ID,
-		TipoDocumento: tipo,
-		Numero:        numero,
-		Archivo:       archivo,
-		FechaSubida:   hoy(),
-		Estado:        "pendiente",
-		Observacion:   "",
+		UsuarioId:      sesion.ID,
+		TipoDocumento:  tipo,
+		Numero:         numero,
+		Archivo:        archivo,
+		ArchivoReverso: archivoReverso,
+		FechaSubida:    hoy(),
+		Estado:         "pendiente",
+		Observacion:    "",
 	}
 
 	var creado models.Documento
@@ -117,6 +124,7 @@ func (c *DocumentosController) Subir() {
 
 	// la foto no se devuelve para no responder algo tan pesado
 	creado.Archivo = ""
+	creado.ArchivoReverso = ""
 
 	responder(&c.Controller, 201, creado)
 }
@@ -141,6 +149,7 @@ func (c *DocumentosController) Mio() {
 	for _, d := range documentos {
 		if d.UsuarioId == sesion.ID {
 			d.Archivo = ""
+			d.ArchivoReverso = ""
 			mios = append(mios, d)
 		}
 	}

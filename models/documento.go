@@ -5,4 +5,6 @@ type SolicitudDocumento struct {
 	TipoDocumento string `json:"tipoDocumento"`
 	Numero        string `json:"numero"`
 	Archivo       string `json:"archivo"`
+	// foto de atras del documento
+	ArchivoReverso string `json:"archivoReverso"`
 }
