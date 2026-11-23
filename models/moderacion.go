@@ -25,7 +25,7 @@ type Documento struct {
 	TipoDocumento string `json:"tipoDocumento"`
 	Numero        string `json:"numero"`
 	Archivo       string `json:"archivo"`
-	// foto de atras del documento ("" en los documentos que se subieron antes)
+	// foto de atras del documento
 	ArchivoReverso string  `json:"archivoReverso"`
 	FechaSubida    string  `json:"fechaSubida"`
 	Estado         string  `json:"estado"`

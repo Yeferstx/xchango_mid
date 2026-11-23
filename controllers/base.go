@@ -228,3 +228,12 @@ func cargarUsuarios() ([]models.Usuario, error) {
 
 	return usuarios, nil
 }
+
+// cuenta las letras de un texto (len cuenta las tildes como 2)
+func contarLetras(texto string) int {
+	total := 0
+	for range texto {
+		total++
+	}
+	return total
+}

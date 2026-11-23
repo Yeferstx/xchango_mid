@@ -40,7 +40,7 @@ func (c *ReportesController) Crear() {
 		return
 	}
 
-	if len([]rune(motivo)) > 120 {
+	if contarLetras(motivo) > 120 {
 		responderError(&c.Controller, 400, "El motivo puede tener máximo 120 caracteres.")
 		return
 	}

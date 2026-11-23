@@ -26,7 +26,7 @@ var candadoPines sync.RWMutex
 
 const maximoIntentos = 5
 
-// la foto de perfil llega como texto (base64), este es el maximo de caracteres
+// tamaño maximo de la foto de perfil
 const maximoAvatar = 300000
 
 type AuthController struct {
@@ -85,7 +85,7 @@ func (c *AuthController) EnviarPin() {
 		}
 	}
 
-	// al iniciar sesión, si el correo no tiene cuenta no se manda el PIN
+	// si va a entrar y no tiene cuenta no se manda el pin
 	if solicitud.Modo == "entrar" && requiereRegistro {
 		responderError(&c.Controller, 404, "No hay ninguna cuenta creada con ese correo. Regístrate primero.")
 		return
@@ -308,7 +308,7 @@ func (c *AuthController) Registro() {
 		return
 	}
 
-	// si no mandan foto queda vacío y el cliente muestra la imagen por defecto
+	// si no manda foto queda vacia y sale la de por defecto
 	avatar := ""
 	if solicitud.Avatar != "" {
 		if !strings.HasPrefix(solicitud.Avatar, "data:image/") {
@@ -357,8 +357,8 @@ func (c *AuthController) Registro() {
 	})
 }
 
-// revisa la fecha de nacimiento (aaaa-mm-dd) y que la persona tenga 18 años o mas
-// devuelve el mensaje de error, o "" si esta bien
+// revisa que la fecha este bien y que sea mayor de edad
+// si esta bien devuelve vacio
 func validarEdad(fecha string) string {
 	fecha = strings.TrimSpace(fecha)
 
@@ -379,7 +379,7 @@ func validarEdad(fecha string) string {
 
 	edad := ahoraMismo.Year() - nacimiento.Year()
 
-	// si todavia no ha cumplido años este año, se resta uno
+	// si no ha cumplido este año se le quita uno
 	if ahoraMismo.Month() < nacimiento.Month() ||
 		(ahoraMismo.Month() == nacimiento.Month() && ahoraMismo.Day() < nacimiento.Day()) {
 		edad--
@@ -394,7 +394,7 @@ func validarEdad(fecha string) string {
 
 const mensajeCelular = "El celular debe tener 10 dígitos y empezar por 3. Ejemplo: 3001234567."
 
-// deja el celular en 10 digitos (le quita el 57 del inicio); false si no es un celular de Colombia
+// deja el celular con 10 numeros, si no sirve devuelve false
 func limpiarCelular(texto string) (string, bool) {
 	numeros := soloNumeros(texto)
 
@@ -495,7 +495,7 @@ func (c *AuthController) ActualizarPerfil() {
 		usuario.Barrio = strings.TrimSpace(cambios.Barrio)
 	}
 	if strings.TrimSpace(cambios.Descripcion) != "" {
-		if len([]rune(strings.TrimSpace(cambios.Descripcion))) > 300 {
+		if contarLetras(strings.TrimSpace(cambios.Descripcion)) > 300 {
 			responderError(&c.Controller, 400, "La descripción no puede pasar de 300 caracteres.")
 			return
 		}

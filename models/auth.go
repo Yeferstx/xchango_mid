@@ -4,7 +4,7 @@ import "time"
 
 type SolicitudPin struct {
 	Correo string `json:"correo"`
-	// "entrar" cuando es inicio de sesión; vacío cuando es registro
+	// "entrar" o vacio si es registro
 	Modo string `json:"modo"`
 }
 
