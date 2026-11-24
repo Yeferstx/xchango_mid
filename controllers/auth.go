@@ -91,6 +91,12 @@ func (c *AuthController) EnviarPin() {
 		return
 	}
 
+	// si se va a registrar y el correo ya tiene cuenta tampoco se manda
+	if solicitud.Modo == "registro" && !requiereRegistro {
+		responderError(&c.Controller, 409, "Ese correo ya tiene una cuenta. Inicia sesión en vez de registrarte.")
+		return
+	}
+
 	pin, err := generarPin()
 	if err != nil {
 		responderError(&c.Controller, 500, "No se pudo generar el PIN.")
@@ -435,6 +441,10 @@ func (c *AuthController) Perfil() {
 
 	for _, u := range usuarios {
 		if u.Id == claims.ID {
+			if u.Estado == "suspendido" {
+				responderError(&c.Controller, 403, "Tu cuenta está suspendida.")
+				return
+			}
 			responder(&c.Controller, 200, u)
 			return
 		}
@@ -462,6 +472,11 @@ func (c *AuthController) ActualizarPerfil() {
 	err := crud.Obtener("usuarios", claims.ID, &usuario)
 	if err != nil {
 		errorCrud(&c.Controller, err)
+		return
+	}
+
+	if usuario.Estado == "suspendido" {
+		responderError(&c.Controller, 403, "Tu cuenta está suspendida.")
 		return
 	}
 
@@ -502,6 +517,10 @@ func (c *AuthController) ActualizarPerfil() {
 		usuario.Descripcion = strings.TrimSpace(cambios.Descripcion)
 	}
 	if cambios.Avatar != "" {
+		if !strings.HasPrefix(cambios.Avatar, "data:image/") {
+			responderError(&c.Controller, 400, "La foto de perfil no es válida.")
+			return
+		}
 		if len(cambios.Avatar) > maximoAvatar {
 			responderError(&c.Controller, 400, "La foto de perfil es muy pesada.")
 			return
