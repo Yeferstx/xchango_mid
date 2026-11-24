@@ -203,6 +203,13 @@ func (c *PublicacionesController) Eliminar() {
 		errorCrud(&c.Controller, err)
 		return
 	}
+
+	// si tenia propuestas abiertas se cancelan
+	err = cancelarTruequesAbiertos(id, "", "La publicación \""+publicacion.Titulo+"\" fue eliminada por su dueño.")
+	if err != nil {
+		errorCrud(&c.Controller, err)
+		return
+	}
 	responderVacio(&c.Controller)
 }
 
@@ -225,6 +232,11 @@ func (c *PublicacionesController) CambiarEstado() {
 
 	if publicacion.UsuarioId != sesion.ID {
 		responderError(&c.Controller, 403, "Esta publicacion no es tuya.")
+		return
+	}
+
+	if publicacion.Estado == "activa" && tieneTruequeAceptado(id) {
+		responderError(&c.Controller, 400, "No puedes pausarla mientras tengas un trueque aceptado por ella.")
 		return
 	}
 
@@ -390,4 +402,20 @@ func armarPublicacion(p *models.Publicacion, d models.DatosPublicacion) {
 			p.Disponibilidad = "Por acordar"
 		}
 	}
+}
+
+// true si la publicacion tiene un trueque aceptado que no se ha cerrado
+func tieneTruequeAceptado(publicacionId string) bool {
+	var trueques []models.Trueque
+	err := services.NewCrudService().Listar("trueques", &trueques)
+	if err != nil {
+		return false
+	}
+
+	for _, t := range trueques {
+		if t.PublicacionId == publicacionId && t.Estado == "aceptado" {
+			return true
+		}
+	}
+	return false
 }

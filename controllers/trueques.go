@@ -157,9 +157,24 @@ func (c *TruequesController) Aceptar() {
 		return
 	}
 
+	if !usuarioPuedeActuar(&c.Controller, sesion.ID) {
+		return
+	}
+
+	var publicacion models.Publicacion
+	err := crud.Obtener("publicaciones", trueque.PublicacionId, &publicacion)
+	if err != nil {
+		errorCrud(&c.Controller, err)
+		return
+	}
+	if publicacion.Estado != "activa" {
+		responderError(&c.Controller, 400, "La publicación ya no está disponible.")
+		return
+	}
+
 	trueque.Estado = "aceptado"
 
-	err := crud.Actualizar("trueques", trueque.Id, trueque, nil)
+	err = crud.Actualizar("trueques", trueque.Id, trueque, nil)
 	if err != nil {
 		errorCrud(&c.Controller, err)
 		return
@@ -254,6 +269,10 @@ func (c *TruequesController) Confirmar() {
 		return
 	}
 
+	if !usuarioPuedeActuar(&c.Controller, sesion.ID) {
+		return
+	}
+
 	if trueque.SolicitanteId == sesion.ID {
 		trueque.ConfirmadoSolicitante = true
 	} else if trueque.PropietarioId == sesion.ID {
@@ -274,6 +293,13 @@ func (c *TruequesController) Confirmar() {
 		if err == nil && publicacion.Tipo != "bien_digital" {
 			publicacion.Estado = "finalizada"
 			err = crud.Actualizar("publicaciones", publicacion.Id, publicacion, nil)
+			if err != nil {
+				errorCrud(&c.Controller, err)
+				return
+			}
+
+			// las demas propuestas por esa publicacion ya no sirven
+			err = cancelarTruequesAbiertos(publicacion.Id, trueque.Id, "La publicación \""+publicacion.Titulo+"\" ya se truequeó con otra persona.")
 			if err != nil {
 				errorCrud(&c.Controller, err)
 				return
@@ -457,4 +483,38 @@ func crearNotificacion(usuarioId string, tipo string, titulo string, mensaje str
 	}
 
 	return services.NewCrudService().Crear("notificaciones", nueva, nil)
+}
+
+// cancela las propuestas pendientes o aceptadas de una publicacion
+// y le avisa a cada solicitante. exceptoId es el trueque que no se toca
+func cancelarTruequesAbiertos(publicacionId string, exceptoId string, mensaje string) error {
+	crud := services.NewCrudService()
+
+	var trueques []models.Trueque
+	err := crud.Listar("trueques", &trueques)
+	if err != nil {
+		return err
+	}
+
+	for _, t := range trueques {
+		abierto := t.Estado == "pendiente" || t.Estado == "aceptado"
+		if t.PublicacionId != publicacionId || t.Id == exceptoId || !abierto {
+			continue
+		}
+
+		fecha := hoy()
+		t.Estado = "cancelado"
+		t.FechaCierre = &fecha
+		err = crud.Actualizar("trueques", t.Id, t, nil)
+		if err != nil {
+			return err
+		}
+
+		err = crearNotificacion(t.SolicitanteId, "rechazada", "Tu propuesta se canceló", mensaje, t.Id)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
