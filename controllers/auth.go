@@ -576,6 +576,12 @@ func (c *AuthController) ListarUsuarios() {
 	responder(&c.Controller, 200, usuarios)
 }
 
+// cuentas de prueba del panel, las mismas de data/admins.json del cliente
+var adminsFijos = []models.AdminUsuario{
+	{Nombre: "Miguel Admin", Email: "admin@xchango.com", Password: "admin123", Rol: "admin", Estado: "activo", Avatar: "https://i.pravatar.cc/80?img=68"},
+	{Nombre: "Ana Moderadora", Email: "moderador@xchango.com", Password: "mod123", Rol: "moderador", Estado: "activo", Avatar: "https://i.pravatar.cc/80?img=45"},
+}
+
 // POST /api/v1/auth/admin/login
 func (c *AuthController) LoginAdmin() {
 	var datos models.LoginAdmin
@@ -599,6 +605,22 @@ func (c *AuthController) LoginAdmin() {
 	for i := range admins {
 		if strings.ToLower(admins[i].Email) == email {
 			admin = &admins[i]
+		}
+	}
+
+	// si es una de las cuentas de prueba y no esta en la base, se crea
+	if admin == nil {
+		for _, fija := range adminsFijos {
+			if fija.Email == email && fija.Password == datos.Password {
+				var creado models.AdminUsuario
+				err = crud.Crear("admins", fija, &creado)
+				if err != nil {
+					errorCrud(&c.Controller, err)
+					return
+				}
+				admin = &creado
+				admin.Password = fija.Password
+			}
 		}
 	}
 
