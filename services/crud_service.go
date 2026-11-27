@@ -26,7 +26,8 @@ type CrudService struct {
 func NewCrudService() *CrudService {
 	return &CrudService{
 		URL:     beego.AppConfig.DefaultString("url_crud", "http://localhost:3000"),
-		Cliente: &http.Client{Timeout: 10 * time.Second},
+		// en Render el CRUD se duerme y tarda hasta un minuto en despertar
+		Cliente: &http.Client{Timeout: 60 * time.Second},
 	}
 }
 
