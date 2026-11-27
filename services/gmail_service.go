@@ -20,11 +20,21 @@ type ServicioGmail struct {
 	Servicio *gmail.Service
 }
 
+// en el computador los archivos estan en la carpeta del proyecto
+// en Render se suben como archivos secretos y quedan en /etc/secrets
+func buscarArchivo(rutaLocal string, nombre string) string {
+	_, err := os.Stat(rutaLocal)
+	if err == nil {
+		return rutaLocal
+	}
+	return "/etc/secrets/" + nombre
+}
+
 // se crea el servicio de Gmail, si no tiene token pide autorizacion y lo guarda en token/token.json
 func NuevoServicioGmail() (*ServicioGmail, error) {
 	contexto := context.Background()
 
-	rutaCredenciales := "credentials/credentials.json"
+	rutaCredenciales := buscarArchivo("credentials/credentials.json", "credentials.json")
 
 	credenciales, err := os.ReadFile(rutaCredenciales)
 	if err != nil {
@@ -59,7 +69,7 @@ func NuevoServicioGmail() (*ServicioGmail, error) {
 
 // si ya hay un token guardado lo usa, si no pide autorizacion
 func obtenerClienteGmail(configuracion *oauth2.Config) (*http.Client, error) {
-	rutaToken := "token/token.json"
+	rutaToken := buscarArchivo("token/token.json", "token.json")
 
 	token, err := leerTokenDeArchivo(rutaToken)
 	if err != nil {
